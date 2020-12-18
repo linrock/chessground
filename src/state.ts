@@ -33,6 +33,7 @@ export interface HeadlessState {
     color?: cg.Color | 'both'; // color that can move. white | black | both
     dests?: cg.Dests; // valid moves. {"a2" ["a3" "a4"] "b1" ["a3" "c3"]}
     showDests: boolean; // whether to add the move-dest class on squares
+    intentOnly?: boolean; // don't update the board after an intended move is played
     events: {
       after?: (orig: cg.Key, dest: cg.Key, metadata: cg.MoveMetadata) => void; // called after the move has been played
       afterNewPiece?: (

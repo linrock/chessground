@@ -128,13 +128,15 @@ export function baseMove(
     destPiece && destPiece.color !== origPiece.color ? destPiece : undefined;
   if (dest === state.selected) unselect(state);
   callUserFunction(state.events.move, orig, dest, captured);
-  if (!tryAutoCastle(state, orig, dest)) {
-    state.pieces.set(dest, origPiece);
-    state.pieces.delete(orig);
+  if (!state.movable.intentOnly) {
+    if (!tryAutoCastle(state, orig, dest)) {
+      state.pieces.set(dest, origPiece);
+      state.pieces.delete(orig);
+    }
+    state.lastMove = [orig, dest];
+    state.check = undefined;
+    callUserFunction(state.events.change);
   }
-  state.lastMove = [orig, dest];
-  state.check = undefined;
-  callUserFunction(state.events.change);
   return captured || true;
 }
 
