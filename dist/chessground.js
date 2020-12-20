@@ -1,9 +1,18 @@
 var Chessground = (function () {
 	'use strict';
 
-	function createCommonjsModule(fn) {
-	  var module = { exports: {} };
-		return fn(module, module.exports), module.exports;
+	function createCommonjsModule(fn, basedir, module) {
+		return module = {
+			path: basedir,
+			exports: {},
+			require: function (path, base) {
+				return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
+			}
+		}, fn(module, module.exports), module.exports;
+	}
+
+	function commonjsRequire () {
+		throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
 	}
 
 	var types = createCommonjsModule(function (module, exports) {
@@ -307,13 +316,15 @@ var Chessground = (function () {
 	    if (dest === state.selected)
 	        unselect(state);
 	    callUserFunction(state.events.move, orig, dest, captured);
-	    if (!tryAutoCastle(state, orig, dest)) {
-	        state.pieces.set(dest, origPiece);
-	        state.pieces.delete(orig);
+	    if (!state.movable.intentOnly) {
+	        if (!tryAutoCastle(state, orig, dest)) {
+	            state.pieces.set(dest, origPiece);
+	            state.pieces.delete(orig);
+	        }
+	        state.lastMove = [orig, dest];
+	        state.check = undefined;
+	        callUserFunction(state.events.change);
 	    }
-	    state.lastMove = [orig, dest];
-	    state.check = undefined;
-	    callUserFunction(state.events.change);
 	    return captured || true;
 	}
 	exports.baseMove = baseMove;
@@ -1874,18 +1885,18 @@ var Chessground = (function () {
 	    return `${piece.color} ${piece.role}`;
 	}
 	function computeSquareClasses(s) {
-	    var _a;
+	    var _a, _b;
 	    const squares = new Map();
-	    if (s.lastMove && s.highlight.lastMove)
-	        for (const k of s.lastMove) {
-	            addSquare(squares, k, 'last-move');
-	        }
+	    if (((_a = s.lastMove) === null || _a === void 0 ? void 0 : _a.length) === 2 && s.highlight.lastMove) {
+	        addSquare(squares, s.lastMove[0], 'last-move move-from');
+	        addSquare(squares, s.lastMove[1], 'last-move move-to');
+	    }
 	    if (s.check && s.highlight.check)
 	        addSquare(squares, s.check, 'check');
 	    if (s.selected) {
 	        addSquare(squares, s.selected, 'selected');
 	        if (s.movable.showDests) {
-	            const dests = (_a = s.movable.dests) === null || _a === void 0 ? void 0 : _a.get(s.selected);
+	            const dests = (_b = s.movable.dests) === null || _b === void 0 ? void 0 : _b.get(s.selected);
 	            if (dests)
 	                for (const k of dests) {
 	                    addSquare(squares, k, 'move-dest' + (s.pieces.has(k) ? ' oc' : ''));
